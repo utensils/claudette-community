@@ -1,0 +1,44 @@
+name: regen-registry
+
+# Defensive job: every push to main should already have a regenerated
+# registry.json (validate.yml fails the PR if not). This workflow opens a
+# corrective PR if anything slipped through — for example, an admin push
+# that bypassed PR review.
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  regen:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.3.11
+
+      - run: bun install --frozen-lockfile
+      - run: bun run generate
+
+      - name: Open corrective PR if drift
+        uses: peter-evans/create-pull-request@v6
+        with:
+          commit-message: "chore(registry): regenerate registry.json"
+          title: "chore(registry): regenerate registry.json"
+          body: |
+            Defensive regen ran after a push to `main` and detected drift
+            between committed `registry.json` and the contributions on
+            disk. Merge this PR to bring the index back in sync.
+          branch: chore/regen-registry
+          delete-branch: true
+          base: main

@@ -3,5 +3,8 @@
   "name": "Example Theme",
   "description": "Starter template — copy this directory and edit",
   "colorScheme": "dark",
-  "accentPreview": "#e07850"
+  "accentPreview": "#e07850",
+  "version": "0.1.0",
+  "author": "your-github-username",
+  "license": "MIT"
 }

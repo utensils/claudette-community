@@ -1,0 +1,193 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/utensils/claudette-community/main/registry.schema.json",
+  "title": "Claudette Community Registry v1",
+  "description": "Hand-written JSON Schema for the registry index file and contribution manifests. Mirrors the Rust types in utensils/Claudette: src/plugin_runtime/manifest.rs (PluginManifest, PluginKind, LanguageContribution, GrammarContribution) and src/ui/src/styles/themes/index.ts (BuiltinThemeMeta), with registry-only fields (version, author, license, source) added on top. This file will be replaced by a schemars-generated copy in Claudette PR #2 of TDD #567.",
+  "type": "object",
+  "required": ["version", "generated_at", "source", "themes", "plugins"],
+  "additionalProperties": false,
+  "properties": {
+    "$schema": { "type": "string" },
+    "version": { "const": 1 },
+    "generated_at": { "type": "string", "format": "date-time" },
+    "source": { "$ref": "#/$defs/RegistrySource" },
+    "themes": { "type": "array", "items": { "$ref": "#/$defs/ThemeEntry" } },
+    "plugins": {
+      "type": "object",
+      "required": ["scm", "env-provider", "language-grammar"],
+      "additionalProperties": false,
+      "properties": {
+        "scm": { "type": "array", "items": { "$ref": "#/$defs/PluginEntry" } },
+        "env-provider": { "type": "array", "items": { "$ref": "#/$defs/PluginEntry" } },
+        "language-grammar": { "type": "array", "items": { "$ref": "#/$defs/PluginEntry" } }
+      }
+    },
+    "slash_commands": { "type": "array" },
+    "mcp_recipes": { "type": "array" }
+  },
+  "$defs": {
+    "KebabCaseId": {
+      "type": "string",
+      "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$"
+    },
+    "Sha256Hex": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "GitSha": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{40}$"
+    },
+    "GithubUser": {
+      "type": "string",
+      "pattern": "^[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,38})$",
+      "description": "GitHub username or org. Tied to author attribution; the validator soft-checks existence via GitHub API at PR time."
+    },
+    "License": {
+      "type": "string",
+      "enum": ["MIT", "Apache-2.0", "BSD-2-Clause", "BSD-3-Clause", "MPL-2.0"],
+      "description": "v1 allowlist. GPL/LGPL/AGPL excluded pending legal review."
+    },
+    "Semver": {
+      "type": "string",
+      "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+(?:-[0-9A-Za-z.-]+)?(?:\\+[0-9A-Za-z.-]+)?$"
+    },
+    "RegistrySource": {
+      "type": "object",
+      "required": ["repo", "ref", "sha"],
+      "additionalProperties": false,
+      "properties": {
+        "repo": { "const": "utensils/claudette-community" },
+        "ref": { "type": "string" },
+        "sha": { "$ref": "#/$defs/GitSha" }
+      }
+    },
+    "ContributionSource": {
+      "oneOf": [
+        {
+          "type": "object",
+          "required": ["type", "path", "sha", "sha256"],
+          "additionalProperties": false,
+          "properties": {
+            "type": { "const": "in-tree" },
+            "path": { "type": "string" },
+            "sha": { "$ref": "#/$defs/GitSha" },
+            "sha256": { "$ref": "#/$defs/Sha256Hex" }
+          }
+        },
+        {
+          "type": "object",
+          "required": ["type", "git_url", "git_ref", "sha", "sha256", "mirror_path"],
+          "additionalProperties": false,
+          "properties": {
+            "type": { "const": "external" },
+            "git_url": { "type": "string", "format": "uri" },
+            "git_ref": { "type": "string" },
+            "sha": { "$ref": "#/$defs/GitSha" },
+            "sha256": { "$ref": "#/$defs/Sha256Hex" },
+            "mirror_path": { "type": "string", "pattern": "^mirrors/" }
+          }
+        }
+      ]
+    },
+    "ThemeEntry": {
+      "type": "object",
+      "required": [
+        "id",
+        "name",
+        "description",
+        "color_scheme",
+        "accent_preview",
+        "version",
+        "author",
+        "license",
+        "submitted_at",
+        "source"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "id": { "$ref": "#/$defs/KebabCaseId" },
+        "name": { "type": "string", "minLength": 1 },
+        "description": { "type": "string" },
+        "color_scheme": { "enum": ["dark", "light"] },
+        "accent_preview": { "type": "string", "pattern": "^#[0-9a-fA-F]{6}$" },
+        "version": { "$ref": "#/$defs/Semver" },
+        "author": { "$ref": "#/$defs/GithubUser" },
+        "license": { "$ref": "#/$defs/License" },
+        "tags": { "type": "array", "items": { "type": "string" } },
+        "submitted_at": { "type": "string", "format": "date" },
+        "source": {
+          "allOf": [
+            { "$ref": "#/$defs/ContributionSource" },
+            {
+              "if": { "properties": { "type": { "const": "external" } } },
+              "then": { "not": true, "$comment": "themes must be in-tree" }
+            }
+          ]
+        }
+      }
+    },
+    "PluginEntry": {
+      "type": "object",
+      "required": [
+        "name",
+        "display_name",
+        "version",
+        "description",
+        "kind",
+        "operations",
+        "author",
+        "license",
+        "submitted_at",
+        "source"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "name": { "$ref": "#/$defs/KebabCaseId" },
+        "display_name": { "type": "string", "minLength": 1 },
+        "version": { "$ref": "#/$defs/Semver" },
+        "description": { "type": "string" },
+        "kind": { "enum": ["scm", "env-provider", "language-grammar"] },
+        "required_clis": { "type": "array", "items": { "type": "string" } },
+        "remote_patterns": { "type": "array", "items": { "type": "string" } },
+        "operations": { "type": "array", "items": { "type": "string" } },
+        "config_schema": { "type": "object" },
+        "settings": { "type": "array" },
+        "languages": { "type": "array", "items": { "$ref": "#/$defs/LanguageContribution" } },
+        "grammars": { "type": "array", "items": { "$ref": "#/$defs/GrammarContribution" } },
+        "author": { "$ref": "#/$defs/GithubUser" },
+        "license": { "$ref": "#/$defs/License" },
+        "tags": { "type": "array", "items": { "type": "string" } },
+        "submitted_at": { "type": "string", "format": "date" },
+        "source": { "$ref": "#/$defs/ContributionSource" }
+      }
+    },
+    "LanguageContribution": {
+      "type": "object",
+      "required": ["id"],
+      "additionalProperties": false,
+      "properties": {
+        "id": { "type": "string", "minLength": 1 },
+        "extensions": { "type": "array", "items": { "type": "string" } },
+        "filenames": { "type": "array", "items": { "type": "string" } },
+        "aliases": { "type": "array", "items": { "type": "string" } },
+        "first_line_pattern": { "type": "string" }
+      }
+    },
+    "GrammarContribution": {
+      "type": "object",
+      "required": ["language", "scope_name", "path"],
+      "additionalProperties": false,
+      "properties": {
+        "language": { "type": "string", "minLength": 1 },
+        "scope_name": { "type": "string", "minLength": 1 },
+        "path": {
+          "type": "string",
+          "pattern": "^[^/]",
+          "not": { "pattern": "\\.\\." },
+          "$comment": "must be plugin-relative; no traversal"
+        }
+      }
+    }
+  }
+}

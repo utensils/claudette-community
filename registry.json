@@ -1,12 +1,53 @@
 {
   "$schema": "./registry.schema.json",
-  "version": 0,
-  "_comment": "Stub registry index. The Claudette in-app registry feature (forthcoming) will consume a generated version of this file. The schema is not yet stable — do not hand-add entries until the registry feature issue is resolved.",
+  "version": 1,
+  "generated_at": "2026-05-02T06:00:12.093Z",
+  "source": {
+    "repo": "utensils/claudette-community",
+    "ref": "main",
+    "sha": "fa3f98ceafba4b398bd4b2b863d9f9af5f23b90b"
+  },
   "themes": [],
   "plugins": {
     "scm": [],
     "env-provider": [],
-    "language-grammar": []
+    "language-grammar": [
+      {
+        "name": "lang-nix",
+        "display_name": "Nix",
+        "version": "1.0.0",
+        "description": "Nix language syntax highlighting (TextMate grammar from nix-community/vscode-nix-ide)",
+        "kind": "language-grammar",
+        "operations": [],
+        "author": "utensils",
+        "license": "MIT",
+        "submitted_at": "2026-05-01",
+        "source": {
+          "type": "in-tree",
+          "path": "plugins/language-grammars/lang-nix",
+          "sha": "fa3f98ceafba4b398bd4b2b863d9f9af5f23b90b",
+          "sha256": "4a6220497e5787231efc74bfff0d1c449767fd205ce3ef0132e89e23aece4978"
+        },
+        "languages": [
+          {
+            "id": "nix",
+            "extensions": [
+              ".nix"
+            ],
+            "aliases": [
+              "Nix"
+            ]
+          }
+        ],
+        "grammars": [
+          {
+            "language": "nix",
+            "scope_name": "source.nix",
+            "path": "grammars/nix.tmLanguage.json"
+          }
+        ]
+      }
+    ]
   },
   "slash_commands": [],
   "mcp_recipes": []

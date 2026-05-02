@@ -1,0 +1,49 @@
+name: mirror-external-plugins
+
+# Hourly cron that mirrors external plugin tarballs into mirrors/ so
+# Claudette never depends on upstream availability. No-ops cleanly when
+# the registry has no external plugins (current state).
+#
+# When external plugins land, this workflow will:
+#   1. Iterate registry.json plugins[*][*] entries with source.type == "external"
+#   2. Resolve source.git_ref to a SHA via `git ls-remote`
+#   3. If the resolved SHA differs from source.sha, re-fetch the
+#      upstream tarball at the new SHA, write to mirrors/, and open a
+#      bot PR with the registry diff for human review.
+
+on:
+  schedule:
+    - cron: "17 * * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  mirror:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Skip if no external plugins
+        id: scan
+        run: |
+          set -euo pipefail
+          count=$(jq '[.plugins[][] | select(.source.type == "external")] | length' registry.json)
+          echo "count=$count" >> "$GITHUB_OUTPUT"
+          echo "External plugins to mirror: $count"
+
+      - name: Stub
+        if: steps.scan.outputs.count == '0'
+        run: echo "Nothing to do — no external plugins in the registry."
+
+      # When the first external plugin lands, replace this stub with the
+      # mirror logic. Keeping it small and obviously-stubbed today so the
+      # cron stays healthy and the gap is visible.
+      - name: Fail loudly if external plugins exist but mirror logic is unimplemented
+        if: steps.scan.outputs.count != '0'
+        run: |
+          echo "::error::External plugins exist in registry.json but mirror.yml is still a stub."
+          echo "Implement the mirror logic in .github/workflows/mirror.yml before merging external plugins."
+          exit 1

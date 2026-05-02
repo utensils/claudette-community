@@ -4,6 +4,8 @@
   "version": "1.0.0",
   "description": "Nix language syntax highlighting (TextMate grammar from nix-community/vscode-nix-ide)",
   "kind": "language-grammar",
+  "author": "utensils",
+  "license": "MIT",
   "operations": [],
   "languages": [
     {

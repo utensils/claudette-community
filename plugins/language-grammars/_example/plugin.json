@@ -4,6 +4,8 @@
   "version": "0.1.0",
   "description": "Starter language-grammar plugin — replace with your language",
   "kind": "language-grammar",
+  "author": "your-github-username",
+  "license": "MIT",
   "operations": [],
   "languages": [
     {

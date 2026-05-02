@@ -1,0 +1,64 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/utensils/claudette-community/main/manifest.schema.json",
+  "title": "Claudette Community Contribution Manifest v1",
+  "description": "Schema for individual theme.json / plugin.json files contributors write. The generator combines these with per-directory git SHA + content hash to produce registry.json (registry.schema.json). Mirrors PluginManifest in utensils/Claudette src/plugin_runtime/manifest.rs and BuiltinThemeMeta in src/ui/src/styles/themes/index.ts.",
+  "oneOf": [
+    { "$ref": "#/$defs/ThemeManifest" },
+    { "$ref": "#/$defs/PluginManifest" }
+  ],
+  "$defs": {
+    "KebabCaseId": {
+      "type": "string",
+      "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$"
+    },
+    "GithubUser": {
+      "type": "string",
+      "pattern": "^[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,38})$"
+    },
+    "License": {
+      "type": "string",
+      "enum": ["MIT", "Apache-2.0", "BSD-2-Clause", "BSD-3-Clause", "MPL-2.0"]
+    },
+    "Semver": {
+      "type": "string",
+      "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+(?:-[0-9A-Za-z.-]+)?(?:\\+[0-9A-Za-z.-]+)?$"
+    },
+    "ThemeManifest": {
+      "type": "object",
+      "required": ["id", "name", "description", "colorScheme", "accentPreview", "version", "author", "license"],
+      "properties": {
+        "id": { "$ref": "#/$defs/KebabCaseId" },
+        "name": { "type": "string", "minLength": 1 },
+        "description": { "type": "string" },
+        "colorScheme": { "enum": ["dark", "light"] },
+        "accentPreview": { "type": "string", "pattern": "^#[0-9a-fA-F]{6}$" },
+        "version": { "$ref": "#/$defs/Semver" },
+        "author": { "$ref": "#/$defs/GithubUser" },
+        "license": { "$ref": "#/$defs/License" },
+        "tags": { "type": "array", "items": { "type": "string" } }
+      }
+    },
+    "PluginManifest": {
+      "type": "object",
+      "required": ["name", "display_name", "version", "description", "operations", "author", "license"],
+      "properties": {
+        "name": { "$ref": "#/$defs/KebabCaseId" },
+        "display_name": { "type": "string", "minLength": 1 },
+        "version": { "$ref": "#/$defs/Semver" },
+        "description": { "type": "string" },
+        "kind": { "enum": ["scm", "env-provider", "language-grammar"], "default": "scm" },
+        "required_clis": { "type": "array", "items": { "type": "string" } },
+        "remote_patterns": { "type": "array", "items": { "type": "string" } },
+        "operations": { "type": "array", "items": { "type": "string" } },
+        "config_schema": { "type": "object" },
+        "settings": { "type": "array" },
+        "languages": { "type": "array" },
+        "grammars": { "type": "array" },
+        "author": { "$ref": "#/$defs/GithubUser" },
+        "license": { "$ref": "#/$defs/License" },
+        "tags": { "type": "array", "items": { "type": "string" } }
+      }
+    }
+  }
+}

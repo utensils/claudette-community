@@ -1,0 +1,7 @@
+{
+  "$schema": "./revocations.schema.json",
+  "version": 1,
+  "generated_at": "2026-05-01T00:00:00Z",
+  "_comment": "Revocation list. Empty = nothing revoked. Per TDD #567, Claudette treats an empty/truncated/missing file as a fetch failure (not 'all clear') to defeat silent-suppression attacks. Add an explicit entry to mark a contribution as revoked.",
+  "entries": []
+}

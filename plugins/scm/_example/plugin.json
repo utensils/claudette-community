@@ -4,6 +4,8 @@
   "version": "0.1.0",
   "description": "Starter SCM plugin — replace this with your provider description",
   "kind": "scm",
+  "author": "your-github-username",
+  "license": "MIT",
   "required_clis": ["echo"],
   "remote_patterns": ["example.com"],
   "operations": ["list_pull_requests"],

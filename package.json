@@ -1,0 +1,16 @@
+{
+  "name": "claudette-community",
+  "private": true,
+  "type": "module",
+  "description": "Tooling for the Claudette community contributions repository",
+  "scripts": {
+    "validate": "bun run scripts/validate.ts",
+    "generate": "bun run scripts/generate-registry.ts",
+    "check": "bun run validate && bun run generate -- --check"
+  },
+  "devDependencies": {
+    "@types/bun": "^1.1.0",
+    "ajv": "^8.17.1",
+    "ajv-formats": "^3.0.1"
+  }
+}

@@ -14,10 +14,34 @@ Thanks for considering a contribution. This guide covers the shared flow; per-ki
 6. **Open a PR.** Use a Conventional Commits title — e.g. `feat(scm): add forgejo provider` or `feat(theme): add catppuccin-mocha`.
 7. Maintainers apply one of the kind labels (`theme`, `plugin:scm`, `plugin:env-provider`, `plugin:language-grammar`, `slash-command`, `mcp-recipe`) plus `submission` and `needs-review`.
 
+## Required manifest fields
+
+Every contribution manifest (`theme.json` or `plugin.json`) must include:
+
+| Field | Notes |
+|---|---|
+| `version` | Semver — `MAJOR.MINOR.PATCH`. Bump on every change worth distributing. |
+| `author` | Your GitHub username or org. Used for attribution and (eventually) namespace policy. |
+| `license` | One of `MIT`, `Apache-2.0`, `BSD-2-Clause`, `BSD-3-Clause`, `MPL-2.0`. GPL/LGPL/AGPL are excluded for v1 pending legal review. |
+
+The validator (`bun run validate`) rejects manifests that miss these or use a license outside the allowlist.
+
 ## Naming
 
 - Plugin directory name = manifest `name` field (e.g. `forgejo`). Kebab-case, no leading prefix like `scm-` (the kind directory already conveys that).
 - Theme id = directory under `themes/` and the `id` in the theme manifest. Kebab-case.
+- Manifest `kind` must match the directory it lives under (`plugins/scm/...` ⇒ `kind: "scm"`).
+
+## Validation
+
+Before opening a PR, run locally:
+
+```sh
+bun install
+bun run check       # runs validate + generate --check
+```
+
+CI (`.github/workflows/validate.yml`) runs the same checks on every PR. If `registry.json` is out of date, the job fails with a "run `bun run generate` and commit" hint.
 
 ## Schema sources of truth
 
@@ -31,7 +55,7 @@ If you want a new manifest field, propose it in the Claudette repo first.
 
 ## License
 
-By submitting a contribution you agree to license it under this repository's [MIT License](LICENSE). If your contribution embeds third-party content (e.g. a TextMate grammar from another open-source project), include a `NOTICE` file in your contribution directory crediting the upstream and noting its license.
+By submitting a contribution you agree to license it under this repository's [MIT License](LICENSE) **or** under one of the v1-allowlisted licenses (MIT, Apache-2.0, BSD-2-Clause, BSD-3-Clause, MPL-2.0) declared in your manifest's `license` field. If your contribution embeds third-party content (e.g. a TextMate grammar from another open-source project), include a `NOTICE` file in your contribution directory crediting the upstream and noting its license.
 
 ## Quality bar
 
