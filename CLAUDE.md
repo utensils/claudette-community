@@ -77,6 +77,33 @@ bun run check                    # validate + generate --check (CI's full PR che
 
 The content hash for each contribution is `sha256(JSON.stringify([{path, sha256}, ...].sortByPath))` — deterministic across runtimes, no tar dependency. Documented in `scripts/generate-registry.ts`.
 
+CI pins Bun to `1.3.11` (`.github/workflows/{validate,regen}.yml`). Match that locally to avoid `bun.lock` churn.
+
+### `--check` elision rule (non-obvious)
+
+`generate -- --check` deliberately ignores two fields when comparing committed `registry.json` against a fresh generation:
+
+- `generated_at` — wall-clock timestamp, drifts every run.
+- `sha` (per-entry) — the last-touch commit. A contributor's pre-commit generate sees commit N-1; CI's post-merge generate sees commit N. The `regen.yml` workflow on push to main corrects this drift.
+
+The trust anchor is **`sha256`** (the content hash). If contribution files changed, `sha256` changes and `--check` fails correctly. Don't try to "fix" `sha` mismatches by hand-editing `registry.json` — let `regen.yml` reconcile after merge.
+
+### Cross-cutting invariants enforced by tooling
+
+Both `validate.ts` and `generate-registry.ts` re-check these — bypass one, the other still trips:
+
+- Directory name == `manifest.name` (plugins) or `manifest.id` (themes).
+- `manifest.kind` matches the kind directory it lives under (`plugins/scm/...` ⇒ `kind: "scm"`).
+- License is in the v1 allowlist (`MIT`, `Apache-2.0`, `BSD-2-Clause`, `BSD-3-Clause`, `MPL-2.0`).
+- For `language-grammar`: at least one entry each in `languages` and `grammars`; every `grammars[].path` resolves inside the plugin directory (no `..`, no leading `/`).
+
+The schema sets `kind` default to `"scm"` if omitted, but contributions should declare it explicitly — the kind/dir cross-check relies on it.
+
+### `revocations.json` and `mirrors/`
+
+- `revocations.json` is **fail-closed** per TDD #567: Claudette treats an empty/missing/truncated file as a *fetch failure*, not "nothing revoked." Don't delete it or leave it blank when revoking — add an explicit entry.
+- `registry.schema.json` permits `source.type: "external"` for plugins that live outside this repo. None exist yet, so the `mirrors/` directory is also absent. `mirror.yml` (hourly cron) is a working stub that will fail loudly if an external plugin is added before the mirror logic is implemented — that's intentional, not a bug to "fix" by hiding the failure.
+
 ## Contributor guidance
 
 - Each contribution is a self-contained directory with the manifest + assets.
