@@ -1,4 +1,4 @@
 untrusted comment: signature from minisign secret key
-RUR7nBOxqyIgmGn+ZMiUrnvACNZkRnGyOgRZe2sD4PBfbJ6phh9hG/Gm58/F7aASdWmZLlru++FoaAEwrQqupBx30mNkBVvImwo=
-trusted comment: claudette-community registry signed at 2026-05-02T16:00:13Z for source.sha=b7dcd34cdb32d07e749cae6f2bfcab9ec6c8748e
-TuSlCvAYna844sgz/H226ksv9my2RRp8CsksSprvw1uEsXu7ST9xiymzfe5jKXNkmKpuXccipjJb9+QOyzeICQ==
+RUR7nBOxqyIgmHiooW5dPMt3rr+bqP0Mu0K2F0/8RmFEEVKZz3YtNKfD9XKwVttfzzmWoGFeCegouzC9oWRiuS7aPbbMSvODLwU=
+trusted comment: claudette-community registry signed at 2026-05-02T16:48:41Z for source.sha=7f5c42739fe2820331f1f243f8cd837c8a7c8b0e
+LeEu00v03/e0TaZu17bpIfAeTBMKy0FuTkvLzvyLZS3lNgu3YOWdqrHO6JZvAsmmOF9Dul8O1Cl/UqvGrarhBA==
