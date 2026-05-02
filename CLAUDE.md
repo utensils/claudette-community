@@ -114,8 +114,22 @@ The flow:
   the secret key. `validate.yml` warns if the sig doesn't match a freshly
   changed `registry.json`, but does not fail.
 - **Push to `main`**: `regen.yml` regenerates `registry.json`, signs it with
-  the secret stored in `COMMUNITY_REGISTRY_MINISIGN_SECRET_KEY`, and either
-  commits both files (no-op if unchanged) or opens a corrective PR.
+  the secret stored in `COMMUNITY_REGISTRY_MINISIGN_SECRET_KEY`, locally
+  verifies with the public key, and pushes both files directly back to
+  `main` if they drifted. The push uses `[skip ci]` and is gated on
+  committer email so it cannot loop on itself.
+- **Healthcheck**: `health.yml` runs every 15 minutes and re-runs
+  `minisign -V` against `main` HEAD. If it ever fails — meaning regen
+  itself broke or hasn't yet fired — it opens / updates a tracking
+  issue. This is the safety net for the window between a contribution
+  merge and regen completing.
+
+Why direct push instead of a corrective PR? The corrective PR
+historically sat unmerged for ~16 hours after a contribution merge,
+during which every Claudette client saw a signature failure (the
+binary fails closed on signature mismatch). The push is mechanical —
+local `minisign -V` is the real safety check — and direct push closes
+that window.
 
 Anyone can verify locally:
 

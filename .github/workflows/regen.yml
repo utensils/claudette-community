@@ -3,12 +3,13 @@ name: regen-registry
 # Defensive job: every push to main triggers a fresh regenerate + sign
 # of registry.json. The signing key only exists in repository secrets —
 # contributors can't sign in their PRs, so this workflow re-signs after
-# every merge and opens a corrective PR if either registry.json or
-# registry.json.sig drifted from what's on disk.
+# every merge and pushes the result directly back to main if either
+# registry.json or registry.json.sig drifted from what's on disk.
 #
 # Claudette refuses any registry whose signature doesn't verify against
 # the embedded public key, so keeping this workflow green is a hard
-# requirement for community contributions to be installable.
+# requirement for community contributions to be installable. See
+# `.github/workflows/health.yml` for the independent drift detector.
 
 on:
   push:
@@ -17,11 +18,21 @@ on:
 
 permissions:
   contents: write
-  pull-requests: write
+
+# Serialize back-to-back regen runs so a fast double-merge doesn't race
+# two pushes against main (the second would fail with non-fast-forward).
+concurrency:
+  group: regen-registry
+  cancel-in-progress: false
 
 jobs:
   regen:
     runs-on: ubuntu-latest
+    # Skip on the bot's own self-push. Belt-and-suspenders with the
+    # [skip ci] marker in the commit message — covers the case where a
+    # human or another workflow forwards the bot's commit without the
+    # marker.
+    if: github.event.head_commit.author.email != 'claudette-community-bot@users.noreply.github.com'
     steps:
       - uses: actions/checkout@v4
         with:
@@ -63,30 +74,33 @@ jobs:
             -t "claudette-community registry signed at ${TS} for source.sha=${SOURCE_SHA}"
           echo "Signed registry.json (source.sha=${SOURCE_SHA})"
 
-      - name: Verify signature locally before opening PR
+      - name: Verify signature locally before pushing
         run: |
           set -euo pipefail
           minisign -V -p keys/community-registry.pub -m registry.json -x registry.json.sig
           echo "Local verify OK — signature matches keys/community-registry.pub"
 
-      - name: Open corrective PR if drift
-        uses: peter-evans/create-pull-request@v6
-        with:
-          commit-message: "chore(registry): regenerate and sign registry.json"
-          title: "chore(registry): regenerate and sign registry.json"
-          body: |
-            Defensive regen + re-sign after a push to `main`. Either the
-            committed `registry.json` drifted from the contributions on
-            disk, or `registry.json.sig` was stale relative to the new
-            commit SHA in `source.sha`.
-
-            This PR brings both files back in sync and re-signs with the
-            production minisign key. Merging is safe — Claudette verifies
-            against the embedded public key and only the new signature
-            would have been published anyway.
-          branch: chore/regen-registry
-          delete-branch: true
-          base: main
-          add-paths: |
-            registry.json
-            registry.json.sig
+      - name: Commit and push if drift
+        run: |
+          set -euo pipefail
+          # Only registry.json and registry.json.sig are mechanical
+          # outputs of this workflow. If anything else changed, that's a
+          # bug — refuse to push it.
+          unexpected=$(git status --porcelain | awk '$2 != "registry.json" && $2 != "registry.json.sig" {print}')
+          if [ -n "$unexpected" ]; then
+            echo "::error::Unexpected files modified by regen workflow:"
+            echo "$unexpected"
+            exit 1
+          fi
+          if git diff --quiet -- registry.json registry.json.sig; then
+            echo "No drift — nothing to push."
+            exit 0
+          fi
+          git config user.name  "claudette-community-bot"
+          git config user.email "claudette-community-bot@users.noreply.github.com"
+          git add registry.json registry.json.sig
+          # [skip ci] prevents this commit from re-triggering regen
+          # (and validate); the if: guard at the job level is a second
+          # line of defence against loops.
+          git commit -m "chore(registry): regenerate and sign registry.json [skip ci]"
+          git push origin HEAD:main
