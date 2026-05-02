@@ -1,11 +1,11 @@
 {
   "$schema": "./registry.schema.json",
   "version": 1,
-  "generated_at": "2026-05-02T16:00:13.427Z",
+  "generated_at": "2026-05-02T16:21:37.180Z",
   "source": {
     "repo": "utensils/claudette-community",
     "ref": "main",
-    "sha": "b7dcd34cdb32d07e749cae6f2bfcab9ec6c8748e"
+    "sha": "5d58a83503364c7697b8008c5e3a8067909a97d2"
   },
   "themes": [],
   "plugins": {
