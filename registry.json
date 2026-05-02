@@ -1,0 +1,13 @@
+{
+  "$schema": "./registry.schema.json",
+  "version": 0,
+  "_comment": "Stub registry index. The Claudette in-app registry feature (forthcoming) will consume a generated version of this file. The schema is not yet stable — do not hand-add entries until the registry feature issue is resolved.",
+  "themes": [],
+  "plugins": {
+    "scm": [],
+    "env-provider": [],
+    "language-grammar": []
+  },
+  "slash_commands": [],
+  "mcp_recipes": []
+}

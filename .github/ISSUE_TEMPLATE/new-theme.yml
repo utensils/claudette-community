@@ -1,0 +1,46 @@
+name: New theme
+description: Propose a new theme (or request one)
+labels: ["theme", "submission", "needs-review"]
+body:
+  - type: input
+    id: name
+    attributes:
+      label: Theme name
+      placeholder: e.g. Catppuccin Mocha
+    validations:
+      required: true
+  - type: textarea
+    id: description
+    attributes:
+      label: Description
+      placeholder: One-line tagline shown in the theme picker
+    validations:
+      required: true
+  - type: dropdown
+    id: scheme
+    attributes:
+      label: Color scheme
+      options:
+        - dark
+        - light
+    validations:
+      required: true
+  - type: input
+    id: accent
+    attributes:
+      label: Accent color (hex)
+      placeholder: "#e07850"
+    validations:
+      required: true
+  - type: input
+    id: source
+    attributes:
+      label: Source / inspiration (optional)
+      description: Upstream URL if this is based on an existing theme
+  - type: checkboxes
+    id: terms
+    attributes:
+      label: Submission
+      options:
+        - label: I plan to open a PR for this myself
+        - label: I'm requesting someone else builds it

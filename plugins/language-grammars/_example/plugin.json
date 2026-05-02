@@ -1,0 +1,22 @@
+{
+  "name": "_example",
+  "display_name": "Example Language",
+  "version": "0.1.0",
+  "description": "Starter language-grammar plugin — replace with your language",
+  "kind": "language-grammar",
+  "operations": [],
+  "languages": [
+    {
+      "id": "_example",
+      "extensions": [".example"],
+      "aliases": ["Example"]
+    }
+  ],
+  "grammars": [
+    {
+      "language": "_example",
+      "scope_name": "source.example",
+      "path": "grammars/example.tmLanguage.json"
+    }
+  ]
+}

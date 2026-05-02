@@ -1,0 +1,42 @@
+name: New plugin
+description: Propose a new plugin (or request one)
+labels: ["submission", "needs-review"]
+body:
+  - type: dropdown
+    id: kind
+    attributes:
+      label: Kind
+      options:
+        - SCM provider (PR / CI integration)
+        - Env-provider (populate workspace env)
+        - Language grammar (syntax highlighting)
+        - Slash command (forthcoming)
+        - MCP recipe (forthcoming)
+    validations:
+      required: true
+  - type: input
+    id: name
+    attributes:
+      label: Plugin name
+      placeholder: e.g. forgejo
+    validations:
+      required: true
+  - type: textarea
+    id: description
+    attributes:
+      label: What it does
+      placeholder: One paragraph explaining the integration and its scope
+    validations:
+      required: true
+  - type: textarea
+    id: deps
+    attributes:
+      label: External dependencies
+      placeholder: CLIs the plugin shells out to (e.g. `gh`, `direnv`), upstream grammar source, etc.
+  - type: checkboxes
+    id: terms
+    attributes:
+      label: Submission
+      options:
+        - label: I plan to open a PR for this myself
+        - label: I'm requesting someone else builds it

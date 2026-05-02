@@ -1,0 +1,9 @@
+{
+  "name": "_example",
+  "display_name": "Example Env Provider",
+  "version": "0.1.0",
+  "description": "Starter env-provider plugin — replace with your tool description",
+  "kind": "env-provider",
+  "required_clis": [],
+  "operations": ["detect", "export"]
+}

@@ -1,0 +1,11 @@
+{
+  "_comment": "Replace this file with a real TextMate grammar lifted from a maintained upstream project. Add a NOTICE file at the plugin root citing the upstream URL, commit SHA, and license.",
+  "name": "Example",
+  "scopeName": "source.example",
+  "patterns": [
+    {
+      "match": "\\b(example|placeholder)\\b",
+      "name": "keyword.control.example"
+    }
+  ]
+}

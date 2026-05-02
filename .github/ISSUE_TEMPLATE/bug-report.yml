@@ -1,0 +1,34 @@
+name: Bug report
+description: Report a bug in a community theme or plugin
+labels: ["bug", "needs-review"]
+body:
+  - type: input
+    id: contribution
+    attributes:
+      label: Affected contribution
+      description: Directory path, e.g. `plugins/scm/forgejo` or `themes/catppuccin-mocha`
+    validations:
+      required: true
+  - type: input
+    id: claudette-version
+    attributes:
+      label: Claudette version
+      placeholder: e.g. 0.4.2 or nightly-2026-04-30
+    validations:
+      required: true
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: What you expected
+    validations:
+      required: true
+  - type: textarea
+    id: repro
+    attributes:
+      label: Reproduction steps

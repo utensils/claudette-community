@@ -1,0 +1,37 @@
+/*
+ * Starter theme. Replace `_example` with your theme id everywhere
+ * (selector below, theme.json `id`, and the directory name).
+ *
+ * Tokens shown here are a minimal subset for illustration. The full
+ * set Claudette consumes lives in:
+ *   https://github.com/utensils/Claudette/blob/main/src/ui/src/styles/theme.css
+ *
+ * Use the `:root` block in that file (the Default Dark theme) as your
+ * reference — override every token defined there.
+ */
+
+[data-theme="_example"] {
+  --accent-primary:      #e07850;
+  --accent-primary-rgb:  224, 120, 80;
+  --accent-dim:          #c45a35;
+  --accent-bg:           rgba(224, 120, 80, 0.08);
+  --accent-bg-strong:    rgba(224, 120, 80, 0.15);
+  --on-accent:           #1c1815;
+
+  --app-bg:              #1c1815;
+  --sidebar-bg:          #26221f;
+  --sidebar-border:      #3d3832;
+  --chat-input-bg:       #2a2520;
+  --chat-header-bg:      #26221f;
+  --terminal-bg:         #1c1815;
+
+  --text-primary:        #f0ebe5;
+  --text-muted:          #b8afa5;
+  --text-dim:            #908880;
+  --text-faint:          #686058;
+  --text-separator:      #3d3832;
+
+  --hover-bg:            rgba(240, 235, 229, 0.06);
+
+  /* …continue with the full token set… */
+}
