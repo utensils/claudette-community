@@ -30,3 +30,25 @@ jobs:
 
       - name: Check registry.json is up to date
         run: bun run generate -- --check
+
+      - name: Install minisign
+        run: sudo apt-get update && sudo apt-get install -y minisign
+
+      - name: Verify registry.json.sig
+        # Sanity-check that the committed signature still matches the
+        # committed registry.json bytes against the published public key.
+        # Failures here are informational on PRs (contributors can't
+        # re-sign — only the secret-bearing regen.yml on main can), so
+        # we surface a warning instead of failing. The trust anchor is
+        # what's at HEAD on main; regen.yml re-signs after every push.
+        run: |
+          set -euo pipefail
+          if [ ! -f registry.json.sig ]; then
+            echo "::warning::registry.json.sig is missing — regen.yml will create it on the next push to main."
+            exit 0
+          fi
+          if minisign -V -p keys/community-registry.pub -m registry.json -x registry.json.sig; then
+            echo "Signature verifies against keys/community-registry.pub"
+          else
+            echo "::warning::registry.json.sig does not match registry.json (this is normal in a PR that updates a contribution; regen.yml re-signs after merge)."
+          fi

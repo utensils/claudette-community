@@ -99,6 +99,33 @@ Both `validate.ts` and `generate-registry.ts` re-check these — bypass one, the
 
 The schema sets `kind` default to `"scm"` if omitted, but contributions should declare it explicitly — the kind/dir cross-check relies on it.
 
+### Registry signing
+
+`registry.json` is signed with a minisign key after every push to `main`. The
+signature lives next to it as `registry.json.sig`; the corresponding public
+key is committed at `keys/community-registry.pub` for transparency, and the
+same bytes are embedded in the Claudette binary. Claudette refuses any
+registry whose signature does not verify — there is no fallback to unsigned
+fetch.
+
+The flow:
+
+- **PRs** never have to update `registry.json.sig`. Contributors don't have
+  the secret key. `validate.yml` warns if the sig doesn't match a freshly
+  changed `registry.json`, but does not fail.
+- **Push to `main`**: `regen.yml` regenerates `registry.json`, signs it with
+  the secret stored in `COMMUNITY_REGISTRY_MINISIGN_SECRET_KEY`, and either
+  commits both files (no-op if unchanged) or opens a corrective PR.
+
+Anyone can verify locally:
+
+```sh
+minisign -V -p keys/community-registry.pub -m registry.json -x registry.json.sig
+```
+
+Don't hand-edit `registry.json.sig` — let CI regenerate it. See `keys/README.md`
+for key-rotation procedure.
+
 ### `revocations.json` and `mirrors/`
 
 - `revocations.json` is **fail-closed** per TDD #567: Claudette treats an empty/missing/truncated file as a *fetch failure*, not "nothing revoked." Don't delete it or leave it blank when revoking — add an explicit entry.
