@@ -247,11 +247,32 @@ function main() {
       );
       process.exit(1);
     }
-    const current = readFileSync(REGISTRY_PATH, "utf-8");
-    // Compare ignoring generated_at — every other field is content-driven.
-    const stripTimestamp = (s: string) =>
-      s.replace(/"generated_at":\s*"[^"]*"/, '"generated_at": "<elided>"');
-    if (stripTimestamp(current) !== stripTimestamp(nextSerialized)) {
+    const current = JSON.parse(readFileSync(REGISTRY_PATH, "utf-8"));
+    // Strip fields whose values legitimately drift between generations
+    // of an otherwise-identical contribution tree:
+    //   - generated_at: timestamp at run time
+    //   - any "sha" field: the commit that introduced the contribution
+    //     advances by one when the contributor's own commit lands, so
+    //     a pre-commit local generate disagrees with a post-commit CI
+    //     generate. The regen workflow corrects drift on push to main.
+    // The trust anchor is "sha256" (the content hash) — those are
+    // compared and must match exactly. If contribution content changed,
+    // sha256 changes, and --check correctly fails.
+    const elide = (value: any): any => {
+      if (Array.isArray(value)) return value.map(elide);
+      if (value && typeof value === "object") {
+        const out: any = {};
+        for (const [k, v] of Object.entries(value)) {
+          if (k === "generated_at" || k === "sha") out[k] = "<elided>";
+          else out[k] = elide(v);
+        }
+        return out;
+      }
+      return value;
+    };
+    const a = JSON.stringify(elide(current));
+    const b = JSON.stringify(elide(next));
+    if (a !== b) {
       console.error("registry.json is out of date.");
       console.error("Run `bun run generate` and commit the result.");
       process.exit(1);
