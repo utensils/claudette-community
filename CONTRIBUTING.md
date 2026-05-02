@@ -45,7 +45,7 @@ CI (`.github/workflows/validate.yml`) runs the same checks on every PR. If `regi
 
 ## Signing
 
-`registry.json` is signed with a minisign key as part of CI on every push to `main` — you don't sign anything as a contributor. `validate.yml` will warn (but not fail) if the committed `registry.json.sig` doesn't match your updated `registry.json`; that's expected in any PR that touches a contribution. The `regen.yml` workflow re-signs after merge.
+`registry.json` is signed with a minisign key as part of CI on every push to `main` — you don't sign anything as a contributor. `validate.yml` will warn (but not fail) if the committed `registry.json.sig` doesn't match your updated `registry.json`; that's expected in any PR that touches a contribution. After your PR merges, `regen.yml` regenerates and re-signs both files and pushes directly back to `main` (typically within ~30 seconds). A separate `health.yml` cron verifies the live signature every 15 minutes as a safety net.
 
 To verify a published registry locally:
 

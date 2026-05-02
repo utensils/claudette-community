@@ -1,0 +1,133 @@
+name: registry-health
+
+# Independent drift detector. Runs on a 15-minute cron and verifies
+# that the registry signature on `main` HEAD still validates against
+# the embedded public key.
+#
+# This catches any state where regen.yml itself failed, was disabled,
+# or hasn't yet run after a contribution merge — i.e. any window where
+# Claudette clients would see a signature failure in production.
+#
+# regen.yml is the *primary* fix (auto-resigns after every merge).
+# This workflow is the safety net.
+
+on:
+  schedule:
+    - cron: "*/15 * * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+# Serialize so two cron ticks don't race to open / update the same
+# tracking issue.
+concurrency:
+  group: registry-health
+  cancel-in-progress: false
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+
+      - name: Install minisign
+        run: sudo apt-get update && sudo apt-get install -y minisign
+
+      - name: Verify signature
+        id: verify
+        run: |
+          set -euo pipefail
+          echo "head_sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+          if [ -f registry.json ]; then
+            echo "source_sha=$(jq -r .source.sha registry.json)" >> "$GITHUB_OUTPUT"
+          else
+            echo "source_sha=" >> "$GITHUB_OUTPUT"
+          fi
+          if [ ! -f registry.json.sig ]; then
+            echo "status=missing" >> "$GITHUB_OUTPUT"
+            echo "::error::registry.json.sig is missing on main."
+            exit 1
+          fi
+          if minisign -V -p keys/community-registry.pub -m registry.json -x registry.json.sig; then
+            echo "status=ok" >> "$GITHUB_OUTPUT"
+            echo "Signature verifies on main HEAD."
+          else
+            echo "status=invalid" >> "$GITHUB_OUTPUT"
+            echo "::error::registry.json.sig does NOT verify on main HEAD."
+            exit 1
+          fi
+
+      # On drift: ensure a single open tracking issue exists. New cron
+      # ticks comment on it instead of opening duplicates.
+      - name: Open or update tracking issue on drift
+        if: failure()
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          STATUS: ${{ steps.verify.outputs.status }}
+          HEAD_SHA: ${{ steps.verify.outputs.head_sha }}
+          SOURCE_SHA: ${{ steps.verify.outputs.source_sha }}
+        run: |
+          set -euo pipefail
+          LABEL="registry-sig-broken"
+          # Idempotent: ignore "already exists" failure.
+          gh label create "$LABEL" \
+            --color B60205 \
+            --description "Registry signature verification is failing on main HEAD" \
+            2>/dev/null || true
+
+          TS=$(date -u +%FT%TZ)
+          BODY=$(cat <<EOF
+          \`minisign -V\` on \`main\` failed at \`$TS\`.
+
+          - **status**: \`$STATUS\` — \`missing\` means \`registry.json.sig\` is absent; \`invalid\` means the signature does not verify against \`keys/community-registry.pub\`.
+          - **main HEAD**: \`$HEAD_SHA\`
+          - **registry \`source.sha\`**: \`$SOURCE_SHA\`
+          - **run log**: $RUN_URL
+
+          Claudette clients see a hard signature failure while this issue is open (the binary fails closed on signature mismatch). Most likely cause: \`regen.yml\` failed or has not yet run for the current HEAD — check that workflow first.
+
+          This issue auto-closes when a later \`registry-health\` run sees the signature verify again.
+          EOF
+          )
+
+          EXISTING=$(gh issue list --label "$LABEL" --state open --json number --jq '.[0].number // ""')
+          if [ -n "$EXISTING" ]; then
+            gh issue comment "$EXISTING" --body "$BODY"
+            echo "Commented on existing tracking issue #$EXISTING"
+          else
+            gh issue create \
+              --label "$LABEL" \
+              --title "registry-sig-broken: registry.json.sig fails to verify on main" \
+              --body "$BODY"
+            echo "Opened new tracking issue"
+          fi
+
+      # On recovery: close any open tracking issue with a resolution
+      # comment. Runs only when verify succeeded.
+      - name: Close tracking issue on recovery
+        if: success()
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          set -euo pipefail
+          LABEL="registry-sig-broken"
+          OPEN=$(gh issue list --label "$LABEL" --state open --json number --jq '.[].number')
+          if [ -z "$OPEN" ]; then
+            echo "No open tracking issue — nothing to close."
+            exit 0
+          fi
+          TS=$(date -u +%FT%TZ)
+          while IFS= read -r n; do
+            [ -z "$n" ] && continue
+            gh issue comment "$n" --body "Signature verification recovered at \`$TS\`. Closing. Run: $RUN_URL"
+            gh issue close "$n"
+            echo "Closed tracking issue #$n"
+          done <<< "$OPEN"
