@@ -43,6 +43,18 @@ bun run check       # runs validate + generate --check
 
 CI (`.github/workflows/validate.yml`) runs the same checks on every PR. If `registry.json` is out of date, the job fails with a "run `bun run generate` and commit" hint.
 
+## Signing
+
+`registry.json` is signed with a minisign key as part of CI on every push to `main` — you don't sign anything as a contributor. `validate.yml` will warn (but not fail) if the committed `registry.json.sig` doesn't match your updated `registry.json`; that's expected in any PR that touches a contribution. The `regen.yml` workflow re-signs after merge.
+
+To verify a published registry locally:
+
+```sh
+minisign -V -p keys/community-registry.pub -m registry.json -x registry.json.sig
+```
+
+Claudette refuses any registry whose signature doesn't verify against the public key embedded in its binary, so keeping `regen.yml` healthy is what makes contributions installable.
+
 ## Schema sources of truth
 
 Manifest schemas live in the Claudette repo. If you want to know what fields are valid, look there:
