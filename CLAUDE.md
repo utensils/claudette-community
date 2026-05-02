@@ -10,6 +10,8 @@ Community-contributed themes, plugins, grammars, and recipes for the [Claudette]
 
 Claudette ships a small set of bundled extensions. This repo collects the larger universe of community contributions across the same extension surface. Each contribution lands as a directory under the appropriate top-level kind directory.
 
+`AGENTS.md` is a symlink to this file — edit `CLAUDE.md` and every agent harness picks up the same content.
+
 ## Layout
 
 ```
@@ -20,8 +22,15 @@ plugins/
   language-grammars/             # TextMate grammar plugins (declarative)
 slash-commands/                  # (forthcoming) reusable /commands
 mcp-recipes/                     # (forthcoming) MCP server presets
-registry.json                    # hand-curated index — seed for the future auto-generated registry
+registry.json                    # auto-generated index — DO NOT hand-edit (run `bun run generate`)
+registry.schema.json             # JSON schema for registry.json
+manifest.schema.json             # JSON schema for theme.json / plugin.json
+revocations.json                 # security revocation list
+scripts/
+  generate-registry.ts           # walks contributions, computes hashes, emits registry.json
+  validate.ts                    # validates manifests against manifest.schema.json
 .github/ISSUE_TEMPLATE/          # contribution issue templates
+.github/workflows/               # CI: validate (per-PR), regen (push to main), mirror (cron)
 ```
 
 Each kind directory contains a `README.md` describing its manifest schema and an `_example/` starter that contributors copy.
@@ -39,12 +48,34 @@ The schemas this repo's contributions must conform to live in the Claudette repo
 
 When making changes that touch contribution schemas, mirror the upstream type. Do not invent new fields here — propose them upstream first.
 
+## Lua plugin runtime (scm, env-provider)
+
+- Plugins run in a sandboxed Luau VM. `os`, `io`, `package`, `require`, `loadfile`, `dofile` are **not** available — don't generate Lua that uses them.
+- The only host surface is the `host` table (full list in `plugins/scm/README.md`). `host.exec` is restricted to CLIs listed in the manifest's `required_clis` and times out at 30s.
+- `language-grammar` plugins do **not** ship an `init.lua` and no Lua VM is spawned — they're pure JSON plus `grammars/*.tmLanguage.json`.
+- The grammar loader rejects `path` values that escape the plugin directory via `..` or symlinks.
+
 ## Working in this repo
 
 - **Conventional Commits** — same as Claudette (`feat:`, `fix:`, `docs:`, `chore:` …). Header max 100 chars.
-- No build step — this repo is currently a content/document repo. CI will be added when the registry feature lands (likely a JSON-schema validator + manifest linter).
-- Don't hand-edit `registry.json` to add new contributions until the schema is finalized; for now keep it as the documented stub.
+- PR title scopes match the kind: `feat(theme):`, `feat(scm):`, `feat(env-provider):`, `feat(language-grammar):`. Maintainers apply one kind label (`theme`, `plugin:scm`, `plugin:env-provider`, `plugin:language-grammar`, `slash-command`, `mcp-recipe`) plus `submission` and `needs-review`.
+- **`registry.json` is auto-generated** by `bun run generate` — never hand-edit. The validator workflow rejects PRs whose committed `registry.json` is out of sync with the contribution tree.
+- After adding/editing a contribution, run `bun run check` (validate + generate --check) locally before pushing. Both `validate` and `generate` walk the kind directories and skip anything starting with `_`.
 - New contributions: drop into the right kind directory as a sibling of `_example/`. Don't modify `_example/` itself unless you're improving the starter for everyone.
+- The `_example/` directories are copy-from templates. Their manifests deliberately use `name: "_example"`, which is **invalid for a real submission** (names must be kebab-case and unique) — copy them, don't try to "fix" them in place.
+- A `NOTICE` file is required inside a `language-grammar` contribution when the grammar is lifted from upstream — cite source URL, commit SHA, and license.
+
+## CI commands
+
+```sh
+bun install                      # install deps (ajv, ajv-formats)
+bun run validate                 # schema-validate every manifest
+bun run generate                 # rebuild registry.json from the current tree
+bun run generate -- --check      # exit non-zero if registry.json is stale
+bun run check                    # validate + generate --check (CI's full PR check)
+```
+
+The content hash for each contribution is `sha256(JSON.stringify([{path, sha256}, ...].sortByPath))` — deterministic across runtimes, no tar dependency. Documented in `scripts/generate-registry.ts`.
 
 ## Contributor guidance
 
@@ -55,9 +86,10 @@ When making changes that touch contribution schemas, mirror the upstream type. D
 
 ## Things that intentionally aren't here yet
 
-- Auto-generated `registry.json` — comes with the registry feature.
-- CI manifest validation — comes with the registry feature.
-- Versioning per contribution — TBD; today the repo's git SHA is the version.
-- An installer CLI — TBD.
+- `schemars`-generated schemas — Claudette PR #2 (per [TDD #567](https://github.com/utensils/Claudette/issues/567)) will replace the hand-written `manifest.schema.json` / `registry.schema.json` with Rust-derived ones uploaded as a CI artifact.
+- Lua syntax linting — `validate.ts` doesn't run a Lua parser yet. Add when the first community SCM/env-provider plugin lands.
+- Author existence check via the GitHub API — soft-validation only today, deferred to avoid PAT/rate-limit complexity in CI.
+- Per-version pinning at install time — registry surfaces only the latest version of each contribution in v1.
+- Author signing (cosign / sigstore) — v2.
 
 When in doubt, file an issue rather than guessing at conventions.
